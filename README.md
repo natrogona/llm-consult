@@ -45,6 +45,10 @@
 
 ### Скриншоты интерфейса RabbitMQ:
 
+![alt text](RabbitMQ_screenshot/Overview.png)
+
+![alt text](RabbitMQ_screenshot/RedisTasksResults.png) - подтверждение использования Redis для бэкенда celery
+
 ![alt text](RabbitMQ_screenshot/Queues.jpeg)
 
 ![alt text](RabbitMQ_screenshot/Connections.jpeg)
