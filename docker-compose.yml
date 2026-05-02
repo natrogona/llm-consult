@@ -1,0 +1,60 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth_service:
+    build: ./auth_service
+    env_file: ./auth_service/.env
+    ports:
+      - "8000:8000"
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  bot_api:
+    build: ./bot_service
+    env_file: ./bot_service/.env
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8001
+
+  bot_polling:
+    build: ./bot_service
+    env_file: ./bot_service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: uv run python -m app.bot.dispatcher
+
+  celery_worker:
+    build: ./bot_service
+    env_file: ./bot_service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: uv run celery -A app.infra.celery_app.celery_app worker --loglevel=info
